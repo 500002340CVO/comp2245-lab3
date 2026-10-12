@@ -20,7 +20,8 @@ function shuffle(array) {
 let deck = [];
 let turnedCards = [];
 let moves = 0;
-let waiting = false; // Prevents clicking while cards are waiting to flip back
+let matchesFound = 0;
+let waiting = false;
 
 const boardElement = document.getElementById("board");
 const movesElement = document.getElementById("moves");
@@ -28,6 +29,7 @@ const statusElement = document.getElementById("status");
 
 function createBoard() {
     deck = shuffle([...fruits, ...fruits]);
+    matchesFound = 0;
 
     deck.forEach((fruit, i) => {
         const card = document.createElement("button");
@@ -42,15 +44,11 @@ function createBoard() {
 boardElement.addEventListener("click", (event) => {
     const card = event.target;
 
-    // Ignore clicks if we are waiting for non-matching cards to turn back
     if (waiting) return;
-
-    // Check that it is a card and not already flipped/matched
     if (!card.classList.contains("card")) return;
     if (card.classList.contains("flipped") || card.classList.contains("matched")) return;
     if (turnedCards.length >= 2) return;
 
-    // Turn the card over
     const index = card.dataset.index;
     const fruit = deck[index];
 
@@ -60,7 +58,6 @@ boardElement.addEventListener("click", (event) => {
 
     turnedCards.push(card);
 
-    // When two cards are turned over, it counts as a move
     if (turnedCards.length === 2) {
         moves++;
         movesElement.textContent = moves;
@@ -75,10 +72,20 @@ boardElement.addEventListener("click", (event) => {
             card2.classList.add("matched");
             card1.disabled = true;
             card2.disabled = true;
-            statusElement.textContent = "That's a pair!";
+            
+            matchesFound++;
+
+            // Check if all 8 pairs have been found
+            if (matchesFound === 8) {
+                statusElement.textContent = `You found all the pairs in ${moves} moves!`;
+                statusElement.classList.add("you-won");
+            } else {
+                statusElement.textContent = "That's a pair!";
+            }
+
             turnedCards = [];
         } else {
-            // Not a match - wait 1 second, then flip them back
+            // Not a match
             statusElement.textContent = "Not a pair. Try again.";
             waiting = true;
 
@@ -89,10 +96,6 @@ boardElement.addEventListener("click", (event) => {
 
                 card2.textContent = "";
                 card2.classList.remove("flipped");
-                card2.setAttribute("aria-label", `Card ${Number(card2.dataset.index) + 1}, ${fruit2.name}`); // or face down
-
-                // Fix aria-label back to face down for both
-                card1.setAttribute("aria-label", `Card ${Number(card1.dataset.index) + 1}, face down`);
                 card2.setAttribute("aria-label", `Card ${Number(card2.dataset.index) + 1}, face down`);
 
                 turnedCards = [];

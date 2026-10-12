@@ -22,15 +22,36 @@ let turnedCards = [];
 let moves = 0;
 let matchesFound = 0;
 let waiting = false;
+let timeoutId = null;
 
 const boardElement = document.getElementById("board");
 const movesElement = document.getElementById("moves");
 const statusElement = document.getElementById("status");
+const newGameButton = document.getElementById("new-game");
 
-function createBoard() {
+function initGame() {
+    // Clear old cards from the board
+    boardElement.replaceChildren();
+
+    // Reset game state
     deck = shuffle([...fruits, ...fruits]);
+    turnedCards = [];
+    moves = 0;
     matchesFound = 0;
+    waiting = false;
 
+    // Cancel any active timer if new game is clicked during delay
+    if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+    }
+
+    // Reset UI elements
+    movesElement.textContent = moves;
+    statusElement.textContent = "Turn over two cards to find a matching pair.";
+    statusElement.classList.remove("you-won");
+
+    // Build new shuffled board
     deck.forEach((fruit, i) => {
         const card = document.createElement("button");
         card.type = "button";
@@ -67,7 +88,6 @@ boardElement.addEventListener("click", (event) => {
         const fruit2 = deck[card2.dataset.index];
 
         if (fruit1.name === fruit2.name) {
-            // Match found
             card1.classList.add("matched");
             card2.classList.add("matched");
             card1.disabled = true;
@@ -75,7 +95,6 @@ boardElement.addEventListener("click", (event) => {
             
             matchesFound++;
 
-            // Check if all 8 pairs have been found
             if (matchesFound === 8) {
                 statusElement.textContent = `You found all the pairs in ${moves} moves!`;
                 statusElement.classList.add("you-won");
@@ -85,11 +104,10 @@ boardElement.addEventListener("click", (event) => {
 
             turnedCards = [];
         } else {
-            // Not a match
             statusElement.textContent = "Not a pair. Try again.";
             waiting = true;
 
-            setTimeout(() => {
+            timeoutId = setTimeout(() => {
                 card1.textContent = "";
                 card1.classList.remove("flipped");
                 card1.setAttribute("aria-label", `Card ${Number(card1.dataset.index) + 1}, face down`);
@@ -100,9 +118,15 @@ boardElement.addEventListener("click", (event) => {
 
                 turnedCards = [];
                 waiting = false;
+                timeoutId = null;
             }, 1000);
         }
     }
 });
 
-createBoard();
+newGameButton.addEventListener("click", () => {
+    initGame();
+});
+
+// Initialize game on load
+initGame();

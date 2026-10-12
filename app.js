@@ -20,6 +20,7 @@ function shuffle(array) {
 let deck = [];
 let turnedCards = [];
 let moves = 0;
+let waiting = false; // Prevents clicking while cards are waiting to flip back
 
 const boardElement = document.getElementById("board");
 const movesElement = document.getElementById("moves");
@@ -40,6 +41,9 @@ function createBoard() {
 
 boardElement.addEventListener("click", (event) => {
     const card = event.target;
+
+    // Ignore clicks if we are waiting for non-matching cards to turn back
+    if (waiting) return;
 
     // Check that it is a card and not already flipped/matched
     if (!card.classList.contains("card")) return;
@@ -74,7 +78,26 @@ boardElement.addEventListener("click", (event) => {
             statusElement.textContent = "That's a pair!";
             turnedCards = [];
         } else {
-            // Not a match (we will add Exercise 4 logic here next)
+            // Not a match - wait 1 second, then flip them back
+            statusElement.textContent = "Not a pair. Try again.";
+            waiting = true;
+
+            setTimeout(() => {
+                card1.textContent = "";
+                card1.classList.remove("flipped");
+                card1.setAttribute("aria-label", `Card ${Number(card1.dataset.index) + 1}, face down`);
+
+                card2.textContent = "";
+                card2.classList.remove("flipped");
+                card2.setAttribute("aria-label", `Card ${Number(card2.dataset.index) + 1}, ${fruit2.name}`); // or face down
+
+                // Fix aria-label back to face down for both
+                card1.setAttribute("aria-label", `Card ${Number(card1.dataset.index) + 1}, face down`);
+                card2.setAttribute("aria-label", `Card ${Number(card2.dataset.index) + 1}, face down`);
+
+                turnedCards = [];
+                waiting = false;
+            }, 1000);
         }
     }
 });
